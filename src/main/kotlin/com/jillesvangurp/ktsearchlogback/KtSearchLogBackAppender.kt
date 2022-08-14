@@ -2,22 +2,37 @@ package com.jillesvangurp.ktsearchlogback
 
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
-import com.jillesvangurp.ktsearch.BulkSession
-import com.jillesvangurp.ktsearch.KtorRestClient
-import com.jillesvangurp.ktsearch.SearchClient
-import com.jillesvangurp.ktsearch.bulkSession
+import com.jillesvangurp.ktsearch.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 import kotlin.time.Duration.Companion.seconds
 
+@Serializable
+data class LogMessage(
+    val message: String,
+    val logger: String,
+    val thread: String,
+    val level: String,
+    val timestamp: Instant = Clock.System.now(),
+    val mdc: Map<String,String>? = null,
+    val context: Map<String,String>? = null,
+)
+
+fun ILoggingEvent.toLogMessage() = LogMessage(
+    message = message,
+    logger = loggerName,
+    thread = threadName,
+    level = level.levelStr,
+    mdc = mdcPropertyMap.takeIf { (it?.size ?: 0) > 0 },
+    context = if(loggerContextVO != null) this.loggerContextVO.propertyMap.takeIf { (it?.size ?: 0) > 0 } else null,
+)
 
 class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
+    // you can override all the public properties via the logback xml config
 
     var host: String = "localhost"
     var port: Int = 9200
@@ -25,6 +40,13 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     var password: String? = null
     var ssl: Boolean = false
 
+    var index="logs"
+
+    var flushSeconds: Int = 1
+    var bulkMaxPageSizw: Int = 200
+
+
+    // lazy create this with whatever was configured
     val client by lazy {
         println("$host:$port")
         SearchClient(KtorRestClient(
@@ -36,25 +58,37 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
         ))
     }
 
+    // some global state
     private lateinit var session: BulkSession
-    private val eventChannel= Channel<ILoggingEvent>(capacity = 1000, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val eventChannel= Channel<LogMessage>(capacity = 1000, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private lateinit var flushJob: Job
     private lateinit var indexJob: Job
 
     private var lastIndexed: Instant?=null
+    private var running=true
 
     override fun start() {
         super.start()
-        CoroutineScope(Dispatchers.Default).launch {
-            while (true) {
-                println("checking")
+        runBlocking {
+            session = client.bulkSession(
+                bulkSize = bulkMaxPageSizw,
+                target = index,
+                closeOnRequestError = false,
+                failOnFirstError = false
+            )
+        }
+        flushJob = CoroutineScope(Dispatchers.Default).launch {
+            while (running) {
                 val now = Clock.System.now()
                 val check = lastIndexed
                 if(check != null) {
-                    if(now.minus(check).inWholeSeconds > 1) {
-                        println("flushing")
-                        session.flush()
+                    if(now.minus(check).inWholeSeconds > flushSeconds) {
+                        try {
+                            session.flush()
+                        } catch (e: Exception) {
+                            println("Error flushing: ${e.message}")
+                        }
                         lastIndexed=now
-                        println("flushed")
                     }
                 } else {
                     lastIndexed = now
@@ -63,36 +97,35 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
             }
         }
         indexJob = CoroutineScope(Dispatchers.Default).launch {
-            session = client.bulkSession(200, target = "logs")
-
-            while(true) {
+            while(running) {
                 val e = eventChannel.receive()
-                println("receive!")
                 try {
-                    session.index("""{"message": "${e.message}"}""".trimMargin())
-                    println("indexing")
+                    println(e)
+                    session.index(doc = e)
                 } catch (e: Exception) {
-                    println("Oopsie")
+                    println("indexing error: ${e.message}")
                 }
             }
         }
     }
 
     override fun append(eventObject: ILoggingEvent?) {
-        println("append")
         if(eventObject != null) {
-            eventChannel.trySend(eventObject)
+            eventChannel.trySend(eventObject.toLogMessage())
         }
     }
 
     override fun stop() {
+        // FIXME never seems to be called during the tests
         println("Stopping")
         runBlocking {
             try {
                 eventChannel.close()
             } catch (e: Exception) {
-                println("Closing event channel failed")
+                println("Closing event channel failed: ${e.message}")
             }
+            running=false
+            flushJob.cancel()
             session.flush()
             session.close()
         }
