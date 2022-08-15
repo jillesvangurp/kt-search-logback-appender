@@ -14,6 +14,7 @@ data class LogMessage(
     val timestamp: Instant = Clock.System.now(),
     val mdc: Map<String, String>? = null,
     val context: Map<String, String>? = null,
+    val contextName: String? = null
 )
 
 fun ILoggingEvent.toLogMessage() = LogMessage(
@@ -22,5 +23,6 @@ fun ILoggingEvent.toLogMessage() = LogMessage(
     thread = threadName,
     level = level.levelStr,
     mdc = mdcPropertyMap.takeIf { (it?.size ?: 0) > 0 },
-    context = if (loggerContextVO != null) this.loggerContextVO.propertyMap.takeIf { (it?.size ?: 0) > 0 } else null,
+    contextName = loggerContextVO?.name,
+    context = this.loggerContextVO?.propertyMap.takeIf { (it?.size ?: 0) > 0 }
 )
