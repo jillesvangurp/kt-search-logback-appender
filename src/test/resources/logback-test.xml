@@ -17,7 +17,14 @@
     </appender>
 
     <appender name="es-out" class="com.jillesvangurp.ktsearchlogback.KtSearchLogBackAppender">
+        <verbose>true</verbose>
+        <host>localhost</host>
         <port>9999</port>
+        <dataStreamName>applogs</dataStreamName>
+        <createDataStream>true</createDataStream>
+        <hotRollOverGb>1</hotRollOverGb>
+        <warmMinAgeDays>1</warmMinAgeDays>
+        <deleteMinAgeDays>7</deleteMinAgeDays>
     </appender>
 
     <appender name="ASYNC-STDOUT" class="ch.qos.logback.classic.AsyncAppender" queueSize="2048">

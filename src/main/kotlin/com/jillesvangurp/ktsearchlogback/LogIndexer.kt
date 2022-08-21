@@ -43,6 +43,7 @@ class LogIndexer(
                 // do some bookkeeping so you can know when you are losing messages
                 callBack = object : BulkItemCallBack {
                     override fun bulkRequestFailed(e: Exception, ops: List<Pair<String, String?>>) {
+                        e.printStackTrace()
                         errorCount++
                     }
 
@@ -66,6 +67,7 @@ class LogIndexer(
                         try {
                             session.flush()
                         } catch (e: Exception) {
+                            e.printStackTrace()
                             println("Error flushing: ${e.message}")
                         }
                         lastIndexed = now
@@ -81,7 +83,7 @@ class LogIndexer(
                 val e = eventChannel.receive()
                 receiveCount++
                 try {
-                    session.index(doc = e)
+                    session.create(doc = e)
                 } catch (e: Exception) {
                     println("indexing error: ${e.message}")
                 }
