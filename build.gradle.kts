@@ -1,3 +1,6 @@
+import com.avast.gradle.dockercompose.ComposeExtension
+import java.net.URL
+
 buildscript {
     repositories {
         mavenCentral()
@@ -17,10 +20,19 @@ plugins {
     id("org.jetbrains.dokka")
     id("maven-publish")
     kotlin("plugin.serialization")
+    id("com.avast.gradle.docker-compose")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     kotlinOptions.jvmTarget = "17"
+}
+
+configure<ComposeExtension> {
+    buildAdditionalArgs.set(listOf("--force-rm"))
+    stopContainers.set(true)
+    removeContainers.set(true)
+    forceRecreate.set(true)
+    useComposeFiles.set(listOf("docker-compose-es-7.yml"))
 }
 
 dependencies {
@@ -44,6 +56,17 @@ dependencies {
 }
 
 tasks.withType<Test> {
+    val isUp = try {
+        URL("http://localhost:9999").openConnection().connect()
+        true
+    } catch (e: Exception) {
+        false
+    }
+    if (!isUp) {
+        dependsOn(
+            "composeUp"
+        )
+    }
     useJUnitPlatform()
     testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     testLogging.events = setOf(
@@ -53,6 +76,9 @@ tasks.withType<Test> {
         org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR,
         org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT
     )
+    if (!isUp) {
+        this.finalizedBy("composeDown")
+    }
 }
 
 val artifactName = "kt-search-kts"
