@@ -14,6 +14,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     // you can override all the public properties via the logback xml config
 
     var verbose = false
+    var logElasticSearchCalls = false
     var host: String = "localhost"
     var port: Int = 9200
     var userName: String? = null
@@ -45,7 +46,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
                 user = userName,
                 password = password,
                 https = ssl,
-                logging = true
+                logging = logElasticSearchCalls
             )
         )
         if(createDataStream) {

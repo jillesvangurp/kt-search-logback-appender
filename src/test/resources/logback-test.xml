@@ -18,6 +18,7 @@
 
     <appender name="es-out" class="com.jillesvangurp.ktsearchlogback.KtSearchLogBackAppender">
         <verbose>true</verbose>
+        <logElasticSearchCalls>logElasticSearchCalls</logElasticSearchCalls>
         <host>localhost</host>
         <port>9999</port>
         <dataStreamName>applogs</dataStreamName>
