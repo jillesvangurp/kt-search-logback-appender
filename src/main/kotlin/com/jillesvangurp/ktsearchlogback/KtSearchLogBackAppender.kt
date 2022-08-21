@@ -24,6 +24,8 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     var flushSeconds: Int = 1
     var bulkMaxPageSizw: Int = 200
     var createDataStream: Boolean = false
+    // Elasticsearch only feature, leave disabled for opensearch
+    var configureIlm = false
 
     var dataStreamName = "applogs"
     var hotRollOverGb = 2
@@ -61,7 +63,8 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
                     warmMinAge = warmMinAgeDays.days,
                     deleteMinAge = deleteMinAgeDays.days,
                     warmShrinkShards = warmShrinkShards,
-                    warmSegments = warmSegments
+                    warmSegments = warmSegments,
+                    configureIlm = configureIlm
                 )
             } catch (e: Exception) {
                 e.printStackTrace()

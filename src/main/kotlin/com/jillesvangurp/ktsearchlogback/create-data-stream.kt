@@ -34,28 +34,31 @@ suspend fun SearchClient.manageDataStream(
     deleteMinAge: Duration,
     warmShrinkShards: Int,
     warmSegments: Int,
+    configureIlm: Boolean,
 ): Boolean {
     if(dataStreamExists(prefix)) {
         // don't recreate
         return false
     }
-    setIlmPolicy("$prefix-ilm-policy") {
-        hot {
-            actions {
-                rollOver(hotRollOverGb)
+    if(configureIlm) {
+        setIlmPolicy("$prefix-ilm-policy") {
+            hot {
+                actions {
+                    rollOver(hotRollOverGb)
+                }
             }
-        }
-        warm {
-            minAge(warmMinAge)
-            actions {
-                shrink(warmShrinkShards)
-                forceMerge(warmSegments)
+            warm {
+                minAge(warmMinAge)
+                actions {
+                    shrink(warmShrinkShards)
+                    forceMerge(warmSegments)
+                }
             }
-        }
-        delete {
-            minAge(deleteMinAge)
-            actions {
-                delete()
+            delete {
+                minAge(deleteMinAge)
+                actions {
+                    delete()
+                }
             }
         }
     }
@@ -68,15 +71,15 @@ suspend fun SearchClient.manageDataStream(
         }
     }
     updateComponentTemplate("$prefix-template-mappings") {
-        dynamicTemplate("mdc_keywords") {
-            pathMatch = "mdc.*"
+//        dynamicTemplate("mdc_keywords") {
+//            pathMatch = "mdc.*"
+//            mapping("keyword")
+//        }
+        dynamicTemplate("keywords") {
+            match = "*"
             mapping("keyword")
         }
-        dynamicTemplate("mdc_keywords") {
-            pathMatch = "context.*"
-            mapping("keyword")
-        }
-        mappings {
+        mappings(false) {
             text("text")
             text(LogMessage::message) {
                 fields {
@@ -88,6 +91,20 @@ suspend fun SearchClient.manageDataStream(
             keyword("thread")
             keyword("level")
             keyword("contextName")
+            put("mdc", withJsonDsl {
+                put("type","object")
+                put("dynamic", true)
+            })
+            put("context", withJsonDsl {
+                put("type","object")
+                put("dynamic", true)
+            })
+//            objField("mdc") {
+////                put("dynamic", true)
+//            }
+//            objField("context") {
+////                put("dynamic", true)
+//            }
         }
         meta {
             put("created_by","kt-search-logback-appender")
