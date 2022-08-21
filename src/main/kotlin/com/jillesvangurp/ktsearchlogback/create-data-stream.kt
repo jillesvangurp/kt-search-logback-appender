@@ -71,12 +71,9 @@ suspend fun SearchClient.manageDataStream(
         }
     }
     updateComponentTemplate("$prefix-template-mappings") {
-//        dynamicTemplate("mdc_keywords") {
-//            pathMatch = "mdc.*"
-//            mapping("keyword")
-//        }
         dynamicTemplate("keywords") {
             match = "*"
+            // this works on the mdc and context fields where set turn dynamic to true
             mapping("keyword")
         }
         mappings(false) {
@@ -91,20 +88,10 @@ suspend fun SearchClient.manageDataStream(
             keyword("thread")
             keyword("level")
             keyword("contextName")
-            put("mdc", withJsonDsl {
-                put("type","object")
-                put("dynamic", true)
-            })
-            put("context", withJsonDsl {
-                put("type","object")
-                put("dynamic", true)
-            })
-//            objField("mdc") {
-////                put("dynamic", true)
-//            }
-//            objField("context") {
-////                put("dynamic", true)
-//            }
+            objField("mdc", dynamic = "true") {
+            }
+            objField("context", dynamic = "true") {
+            }
         }
         meta {
             put("created_by","kt-search-logback-appender")
@@ -122,7 +109,7 @@ suspend fun SearchClient.manageDataStream(
         priority=300
         composedOf = listOf("$prefix-template-settings", "$prefix-template-mappings")
     }
-
+    // create the data stream
     createDataStream(prefix)
     return true
 }

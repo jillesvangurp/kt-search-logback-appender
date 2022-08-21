@@ -37,7 +37,6 @@ class LogIndexer(
         session = runBlocking {
              client.bulkSession(
                 bulkSize = bulkMaxPageSize,
-                target = index,
                 closeOnRequestError = false,
                 failOnFirstError = false,
                 // do some bookkeeping so you can know when you are losing messages
@@ -83,7 +82,7 @@ class LogIndexer(
                 val e = eventChannel.receive()
                 receiveCount++
                 try {
-                    session.create(doc = e)
+                    session.create(index=index,doc = e)
                 } catch (e: Exception) {
                     println("indexing error: ${e.message}")
                 }
