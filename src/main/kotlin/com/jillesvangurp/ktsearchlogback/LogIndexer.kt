@@ -12,7 +12,7 @@ class LogIndexer(
     private val client: SearchClient,
     private val index: String,
     private val bulkMaxPageSize: Int,
-    private val flushSeconds: Int
+    private val flushSeconds: Int,
 ) {
     private var session: BulkSession
     internal val eventChannel = Channel<LogMessage>(
@@ -32,6 +32,7 @@ class LogIndexer(
     private var failCount=0
     private var errorCount=0
     private var receiveCount=0
+
 
     init {
         session = runBlocking {

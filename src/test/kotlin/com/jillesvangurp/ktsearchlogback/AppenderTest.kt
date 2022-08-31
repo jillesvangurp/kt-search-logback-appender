@@ -3,7 +3,11 @@ package com.jillesvangurp.ktsearchlogback
 import com.jillesvangurp.ktsearch.*
 import com.jillesvangurp.searchdsls.querydsl.term
 import io.kotest.assertions.timing.eventually
+import io.kotest.matchers.collections.contain
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContainExactly
 import io.kotest.matchers.longs.shouldBeGreaterThan
+import io.kotest.matchers.shouldNot
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -28,9 +32,15 @@ class AppenderTest {
                 // should not throw because the data stream was created
                 client.getIndexMappings("applogs")
                 // if our mapping is applied, we should be able to query on context.environment
-                client.search("applogs") {
-                    query=term("context.environment", "tests")
-                }.total shouldBeGreaterThan 2
+                val resp = client.search("applogs") {
+                    query = term("context.environment", "tests")
+                }
+                resp.total shouldBeGreaterThan 2
+                resp.parseHits<LogMessage>(DEFAULT_JSON).first().let { m ->
+                    (m?.context?.keys ?: setOf()) shouldContain "host"
+                    (m?.context?.keys ?: setOf()) shouldNot contain("exclude")
+
+                }
             }
 
         }

@@ -35,7 +35,19 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     var deleteMinAgeDays = 30
     var warmShrinkShards = 1
     var warmSegments = 1
+    var contextVariableFilterRe = ""
 
+
+    private val contextVariableFilter: Regex? by lazy {
+        contextVariableFilterRe.takeIf { it.isNotBlank() }?.let {
+            try {
+                it.toRegex()
+            } catch (e: Exception) {
+                log("Error parsing $it: ${e.message}")
+                null
+            }
+        }
+    }
     private lateinit var logIndexer: LogIndexer
 
     override fun start() {
@@ -92,7 +104,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
 
     override fun append(eventObject: ILoggingEvent?) {
         if (eventObject != null) {
-            logIndexer.eventChannel.trySend(eventObject.toLogMessage())
+            logIndexer.eventChannel.trySend(eventObject.toLogMessage(contextVariableFilter))
         }
     }
 

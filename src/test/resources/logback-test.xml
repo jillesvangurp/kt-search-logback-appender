@@ -4,7 +4,8 @@
 
     <!-- will get added to the context and logged along with everything-->
     <variable scope="context" name="environment" value="tests" />
-    <variable scope="context" name="host" value="${HOSTNAME}" />
+    <variable scope="context" name="host" value="${HOSTNAME}" />x
+    <variable scope="context" name="exclude" value="no!" />x
 
     <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
         <resetJUL>true</resetJUL>
@@ -27,6 +28,7 @@
         <hotRollOverGb>1</hotRollOverGb>
         <warmMinAgeDays>1</warmMinAgeDays>
         <deleteMinAgeDays>7</deleteMinAgeDays>
+        <contextVariableFilterRe>(environment|host)</contextVariableFilterRe>
     </appender>
 
     <appender name="ASYNC-STDOUT" class="ch.qos.logback.classic.AsyncAppender" queueSize="2048">

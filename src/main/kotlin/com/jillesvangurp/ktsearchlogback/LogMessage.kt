@@ -19,12 +19,18 @@ data class LogMessage(
     val contextName: String? = null,
 )
 
-fun ILoggingEvent.toLogMessage() = LogMessage(
+fun ILoggingEvent.toLogMessage(variableFilter: Regex?) = LogMessage(
     message = message,
     logger = loggerName,
     thread = threadName,
     level = level.levelStr,
     mdc = mdcPropertyMap.takeIf { (it?.size ?: 0) > 0 },
     contextName = loggerContextVO?.name,
-    context = this.loggerContextVO?.propertyMap.takeIf { (it?.size ?: 0) > 0 }
+    context = this.loggerContextVO?.propertyMap.takeIf { (it?.size ?: 0) > 0 }?.filter { (k,_)->
+        if(variableFilter!=null) {
+            k.matches(variableFilter)
+        } else {
+            true
+        }
+    }
 )
