@@ -21,6 +21,7 @@ suspend fun SearchClient.dataStreamExists(name: String): Boolean {
             throw e
         }
     } else {
+        println(response.getOrNull()?.text)
         true
     }
 }
@@ -74,23 +75,39 @@ suspend fun SearchClient.manageDataStream(
         dynamicTemplate("keywords") {
             match = "*"
             // this works on the mdc and context fields where set turn dynamic to true
-            mapping("keyword")
+            mapping("keyword") {
+                ignoreAbove="256"
+            }
         }
         mappings(false) {
             text("text")
             text(LogMessage::message) {
                 fields {
-                    keyword("keyword")
+                    keyword("keyword") {
+                        ignoreAbove="256"
+                    }
                 }
                 copyTo = listOf("text")
             }
             date("@timestamp")
-            keyword("thread")
-            keyword("level")
-            keyword("contextName")
-            objField("mdc", dynamic = "true") {
+            keyword(LogMessage::thread)
+            keyword(LogMessage::level)
+            keyword(LogMessage::logger) {
+                copyTo = listOf("text")
             }
-            objField("context", dynamic = "true") {
+            keyword(LogMessage::contextName)
+            objField(LogMessage::mdc, dynamic = "true") {
+            }
+            objField(LogMessage::context, dynamic = "true") {
+            }
+            objField(LogMessage::exceptionList) {
+                keyword(LogException::className) {
+                    ignoreAbove="256"
+                    copyTo = listOf("text")
+                }
+                text(LogMessage::message) {
+                    copyTo = listOf("text")
+                }
             }
         }
         meta {

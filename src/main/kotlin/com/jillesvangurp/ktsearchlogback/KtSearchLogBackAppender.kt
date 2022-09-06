@@ -8,7 +8,8 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import kotlin.time.Duration.Companion.days
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 @Suppress("MemberVisibilityCanBePrivate", "unused") // we need public properties
 class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     // you can override all the public properties via the logback xml config
@@ -24,6 +25,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     var flushSeconds: Int = 1
     var bulkMaxPageSizw: Int = 200
     var createDataStream: Boolean = false
+
     // Elasticsearch only feature, leave disabled for opensearch
     var configureIlm = false
 
@@ -64,24 +66,24 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
             )
         )
         log("connecting to $host:$port using ssl $ssl with user: $userName and password: ${password?.map { 'x' }}")
-        if(createDataStream) {
+        if (createDataStream) {
             runBlocking {
-                log("check if data stream needs to be created")
                 val created = try {
-                client.manageDataStream(
-                    prefix = dataStreamName,
-                    hotRollOverGb = hotRollOverGb,
-                    numberOfReplicas = numberOfReplicas,
-                    numberOfShards = numberOfShards,
-                    warmMinAge = warmMinAgeDays.days,
-                    deleteMinAge = deleteMinAgeDays.days,
-                    warmShrinkShards = warmShrinkShards,
-                    warmSegments = warmSegments,
-                    configureIlm = configureIlm
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+                    client.manageDataStream(
+                        prefix = dataStreamName,
+                        hotRollOverGb = hotRollOverGb,
+                        numberOfReplicas = numberOfReplicas,
+                        numberOfShards = numberOfShards,
+                        warmMinAge = warmMinAgeDays.days,
+                        deleteMinAge = deleteMinAgeDays.days,
+                        warmShrinkShards = warmShrinkShards,
+                        warmSegments = warmSegments,
+                        configureIlm = configureIlm
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    false
+                }
                 log("data stream created: $created")
             }
         }
