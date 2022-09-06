@@ -1,4 +1,7 @@
 [![Run tests](https://github.com/jillesvangurp/kt-search-logback-appender/actions/workflows/ci.yml/badge.svg)](https://github.com/jillesvangurp/kt-search-logback-appender/actions/workflows/ci.yml)
+[![](https://jitpack.io/v/jillesvangurp/kt-search-logback-appender.svg)](https://jitpack.io/#jillesvangurp/kt-search-logback-appender)
+
+
 
 Log appender for Logback that bulk indexes to Elasticsearch using kt-search as the client.
 
