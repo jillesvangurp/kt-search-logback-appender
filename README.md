@@ -1,7 +1,14 @@
-Log appender for Logback that pushes to Elasticsearch using kt-search as the client.
+Log appender for Logback that bulk indexes to Elasticsearch using kt-search as the client.
 
-Note. work in progress and not ready for general usage yet
+The appender uses the provided `LogMessage` as a model class. This is an opinionated representation of log messages as produced by Logback. It passes on MDC variable, allows you pass on Logback context variables, and represents exception stack traces in a way that makes searching on exception classes or messages really easy.
 
+Features
+
+- You can let it create a datastream for you; or if you prefer you can manage your own mapping templates
+- Can be easily configured to work with elastic cloud
+- You can also use Opensearch but in that case you need to turn ilm off. You may want to explore the Opensearch state management for this which implements similar functionality.
+
+Note. still a work in progress and not ready for general usage yet. 
 
 ## Usage
 
