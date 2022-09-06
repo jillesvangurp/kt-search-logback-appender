@@ -63,6 +63,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
                 logging = logElasticSearchCalls
             )
         )
+        log("connecting to $host:$port using ssl $ssl with user: $userName and password: ${password?.map { 'x' }}")
         if(createDataStream) {
             runBlocking {
                 log("check if data stream needs to be created")
