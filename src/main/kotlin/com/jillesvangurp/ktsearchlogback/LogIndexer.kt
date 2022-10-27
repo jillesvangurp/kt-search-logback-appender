@@ -33,61 +33,78 @@ class LogIndexer(
     private var errorCount=0
     private var receiveCount=0
 
-
     init {
-        session = runBlocking {
-             client.bulkSession(
-                bulkSize = bulkMaxPageSize,
-                closeOnRequestError = false,
-                failOnFirstError = false,
-                // do some bookkeeping so you can know when you are losing messages
-                callBack = object : BulkItemCallBack {
-                    override fun bulkRequestFailed(e: Exception, ops: List<Pair<String, String?>>) {
-                        e.printStackTrace()
-                        errorCount++
-                    }
-
-                    override fun itemFailed(operationType: OperationType, item: BulkResponse.ItemDetails) {
-                        failCount++
-                    }
-
-                    override fun itemOk(operationType: OperationType, item: BulkResponse.ItemDetails) {
-                        successCount++
-                    }
-
-                }
-            )
-        }
-        flushJob = loggingScope.launch {
-            while (running) {
-                val now = Clock.System.now()
-                val check = lastIndexed
-                if (check != null) {
-                    if (now.minus(check).inWholeSeconds > flushSeconds) {
-                        try {
-                            session.flush()
-                        } catch (e: Exception) {
+        try {
+            session = runBlocking {
+                 client.bulkSession(
+                    bulkSize = bulkMaxPageSize,
+                    closeOnRequestError = false,
+                    failOnFirstError = false,
+                    // do some bookkeeping so you can know when you are losing messages
+                    callBack = object : BulkItemCallBack {
+                        override fun bulkRequestFailed(e: Exception, ops: List<Pair<String, String?>>) {
                             e.printStackTrace()
-                            println("Error flushing: ${e.message}")
+                            errorCount++
                         }
-                        lastIndexed = now
+
+                        override fun itemFailed(operationType: OperationType, item: BulkResponse.ItemDetails) {
+                            failCount++
+                        }
+
+                        override fun itemOk(operationType: OperationType, item: BulkResponse.ItemDetails) {
+                            successCount++
+                        }
+
                     }
-                } else {
-                    lastIndexed = now
-                }
-                delay(1.seconds)
+                )
             }
-        }
-        indexJob = loggingScope.launch {
-            while (running) {
-                val e = eventChannel.receive()
-                receiveCount++
+            flushJob = loggingScope.launch {
                 try {
-                    session.create(index=index,doc = e)
+                    while (running) {
+                        val now = Clock.System.now()
+                        val check = lastIndexed
+                        if (check != null) {
+                            if (now.minus(check).inWholeSeconds > flushSeconds) {
+                                try {
+                                    session.flush()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    println("Error flushing: ${e.message}")
+                                }
+                                lastIndexed = now
+                            }
+                        } else {
+                            lastIndexed = now
+                        }
+                        delay(1.seconds)
+                    }
                 } catch (e: Exception) {
-                    println("indexing error: ${e.message}")
+                    println("Logback appender flush loop exiting abnormally ${e.message}")
+                    e.printStackTrace()
                 }
             }
+            indexJob = loggingScope.launch {
+                try {
+                    while (running) {
+                        try {
+                            val e = eventChannel.receive()
+                            receiveCount++
+                            session.create(index=index,doc = e)
+                        } catch (e: Exception) {
+                            println("indexing error: ${e.message}")
+                            e.printStackTrace()
+                        }
+                    }
+                } catch (e: Exception) {
+                    println("Logback appender session create loop exiting abnormally ${e.message}")
+                    e.printStackTrace()
+                }
+            }
+            println("Started successfully")
+        } catch (e: Exception) {
+            println("Error initializing kt-search log appender")
+            e.printStackTrace()
+            throw e
         }
     }
 
