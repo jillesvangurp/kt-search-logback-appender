@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 data class LogMessage(
     val message: String,
     val logger: String,
-    val thread: String,
+    val thread: String?=null,
     val level: String,
     @SerialName("@timestamp")
     val timestamp: Instant = Clock.System.now(),
