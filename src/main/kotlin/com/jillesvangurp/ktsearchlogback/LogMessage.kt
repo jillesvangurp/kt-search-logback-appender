@@ -51,7 +51,7 @@ fun ILoggingEvent.toLogMessage(variableFilter: Regex?): LogMessage {
         logger = loggerName,
         thread = threadName,
         level = level.levelStr,
-        mdc = mdcPropertyMap.takeIf { (it?.size ?: 0) > 0 },
+        mdc = mdcPropertyMap.takeIf { (it?.size ?: 0) > 0 }?.filter { !it.value.isNullOrBlank() },
         contextName = loggerContextVO?.name,
         exceptionList = throwableProxy.toLogException(),
         context = this.loggerContextVO?.propertyMap.takeIf { (it?.size ?: 0) > 0 }?.filter { (k,_)->
@@ -60,6 +60,6 @@ fun ILoggingEvent.toLogMessage(variableFilter: Regex?): LogMessage {
             } else {
                 true
             }
-        }
+        }?.filter { !it.value.isNullOrBlank() }
     )
 }
