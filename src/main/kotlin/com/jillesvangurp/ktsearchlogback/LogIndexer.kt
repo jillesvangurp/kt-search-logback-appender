@@ -43,11 +43,13 @@ class LogIndexer(
                     // do some bookkeeping so you can know when you are losing messages
                     callBack = object : BulkItemCallBack {
                         override fun bulkRequestFailed(e: Exception, ops: List<Pair<String, String?>>) {
+                            println("bulkRequest failed ${e.message}")
                             e.printStackTrace()
                             errorCount++
                         }
 
                         override fun itemFailed(operationType: OperationType, item: BulkResponse.ItemDetails) {
+                            println("bulkItem failed ${operationType.name}")
                             failCount++
                         }
 
