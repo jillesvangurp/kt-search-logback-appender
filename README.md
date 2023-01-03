@@ -31,7 +31,7 @@ And then the dependency:
 
 ```kotlin
     // check the latest release tag for the current version
-    implementation("com.github.jillesvangurp:kt-search-logback-appender:0.1.4")
+    implementation("com.jillesvangurp:kt-search-logback-appender:0.1.4")
 ```
 
 ## Usage
