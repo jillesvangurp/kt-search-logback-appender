@@ -87,8 +87,8 @@ tasks.withType<Test> {
     }
 }
 
-val artifactName = "kt-search-kts"
-val artifactGroup = "com.github.jillesvangurp"
+val artifactName = rootProject.name
+val artifactGroup = "com.jillesvangurp"
 
 val sourceJar = task("sourceJar", Jar::class) {
     dependsOn(tasks["classes"])
@@ -112,9 +112,13 @@ publishing {
     }
 
     publications {
+        if(rootProject.version == "unspecified") {
+            error("call with -Pversion=x.y.z to set a version and make sure it lines up with the current tag")
+        }
         create<MavenPublication>("mavenJava") {
             groupId = artifactGroup
             artifactId = artifactName
+
             pom {
                 description.set("Kts extensions for kt-search. Easily script operations for Elasticsearch and Opensearch with .main.kts scripts")
                 name.set(artifactId)
