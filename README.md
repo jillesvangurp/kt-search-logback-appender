@@ -1,7 +1,4 @@
 [![Run tests](https://github.com/jillesvangurp/kt-search-logback-appender/actions/workflows/ci.yml/badge.svg)](https://github.com/jillesvangurp/kt-search-logback-appender/actions/workflows/ci.yml)
-[![](https://jitpack.io/v/jillesvangurp/kt-search-logback-appender.svg)](https://jitpack.io/#jillesvangurp/kt-search-logback-appender)
-
-
 
 Log appender for Logback that bulk indexes to Elasticsearch using kt-search as the client.
 
@@ -14,6 +11,28 @@ Features
 - You can also use Opensearch but in that case you need to turn ilm off. You may want to explore the Opensearch state management for this which implements similar functionality.
 
 Note. still a work in progress and not ready for general usage yet. 
+
+## Gradle
+
+Add the `maven.tryformation.com` repository:
+
+```kotlin
+repositories {
+    mavenCentral()
+    maven("https://maven.tryformation.com/releases") {
+        content {
+            includeGroup("com.jillesvangurp")
+        }
+    }
+}
+```
+
+And then the dependency:
+
+```kotlin
+    // check the latest release tag for the current version
+    implementation("com.github.jillesvangurp:kt-search-logback-appender:0.1.4")
+```
 
 ## Usage
 

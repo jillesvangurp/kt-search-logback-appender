@@ -13,6 +13,12 @@ repositories {
             includeGroup("com.jillesvangurp")
         }
     }
+//    maven("https://jitpack.io") {
+//        content {
+//            includeGroup("com.github.jillesvangurp")
+//            includeGroup("com.github.jillesvangurp.ktsearch")
+//        }
+//    }
 }
 
 plugins {
@@ -38,7 +44,7 @@ configure<ComposeExtension> {
 dependencies {
     api(Kotlin.stdlib.jdk8)
     // use -jvm dependencies here because otherwise kts fails to fetch
-    api("com.jillesvangurp:search-client-jvm:_")
+    api("com.jillesvangurp:search-client:_")
     api("io.github.microutils:kotlin-logging:_")
     api("ch.qos.logback:logback-classic:_")
 
@@ -96,6 +102,15 @@ val javadocJar = task("javadocJar", Jar::class) {
 }
 
 publishing {
+    repositories {
+        maven {
+            // GOOGLE_APPLICATION_CREDENTIALS env var must be set for this to work
+            // public repository is at https://maven.tryformation.com/releases
+            url = uri("gcs://mvn-public-tryformation/releases")
+            name = "FormationPublic"
+        }
+    }
+
     publications {
         create<MavenPublication>("mavenJava") {
             groupId = artifactGroup
