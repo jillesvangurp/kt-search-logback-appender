@@ -101,6 +101,17 @@ val javadocJar = task("javadocJar", Jar::class) {
     archiveClassifier.set("javadoc")
 }
 
+
+tasks.register("versionCheck") {
+    if(rootProject.version == "unspecified") {
+        error("call with -Pversion=x.y.z to set a version and make sure it lines up with the current tag")
+    }
+}
+
+tasks.withType<PublishToMavenRepository> {
+    dependsOn("versionCheck")
+}
+
 publishing {
     repositories {
         maven {
@@ -112,9 +123,6 @@ publishing {
     }
 
     publications {
-        if(rootProject.version == "unspecified") {
-            error("call with -Pversion=x.y.z to set a version and make sure it lines up with the current tag")
-        }
         create<MavenPublication>("mavenJava") {
             groupId = artifactGroup
             artifactId = artifactName
