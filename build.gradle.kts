@@ -103,8 +103,10 @@ val javadocJar = task("javadocJar", Jar::class) {
 
 
 tasks.register("versionCheck") {
-    if(rootProject.version == "unspecified") {
-        error("call with -Pversion=x.y.z to set a version and make sure it lines up with the current tag")
+    doLast {
+        if(rootProject.version == "unspecified") {
+            error("call with -Pversion=x.y.z to set a version and make sure it lines up with the current tag")
+        }
     }
 }
 
