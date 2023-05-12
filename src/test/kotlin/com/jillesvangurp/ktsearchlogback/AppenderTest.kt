@@ -13,7 +13,6 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.slf4j.MDC
-import java.lang.Exception
 import kotlin.time.Duration.Companion.seconds
 
 val logger = KotlinLogging.logger {}
@@ -45,10 +44,10 @@ class AppenderTest {
                 resp.total shouldBeGreaterThan 2
                 val hits = resp.parseHits<LogMessage>(DEFAULT_JSON)
                 hits.first().let { m ->
-                    (m?.context?.keys ?: setOf()) shouldContain "host"
-                    (m?.context?.keys ?: setOf()) shouldNot contain("exclude")
+                    (m.context?.keys ?: setOf()) shouldContain "host"
+                    (m.context?.keys ?: setOf()) shouldNot contain("exclude")
                 }
-                hits.first(){it?.message == "stacktrace"}?.let {
+                hits.first { it.message == "stacktrace"}.let {
                     (it.exceptionList?.first()?.stackTrace?.size?:-1) shouldBeGreaterThan 1
                 }
             }
