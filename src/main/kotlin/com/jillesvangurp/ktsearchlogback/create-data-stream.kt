@@ -37,10 +37,6 @@ suspend fun SearchClient.manageDataStream(
     warmSegments: Int,
     configureIlm: Boolean,
 ): Boolean {
-    if(dataStreamExists(prefix)) {
-        // don't recreate
-        return false
-    }
     if(configureIlm) {
         setIlmPolicy("$prefix-ilm-policy") {
             hot {
@@ -73,6 +69,7 @@ suspend fun SearchClient.manageDataStream(
     }
     updateComponentTemplate("$prefix-template-mappings") {
         dynamicTemplate("keywords") {
+            matchMappingType = "string"
             match = "*"
             // this works on the mdc and context fields where set turn dynamic to true
             mapping("keyword") {
@@ -127,6 +124,8 @@ suspend fun SearchClient.manageDataStream(
         composedOf = listOf("$prefix-template-settings", "$prefix-template-mappings")
     }
     // create the data stream
-    createDataStream(prefix)
+    if(!dataStreamExists(prefix)) {
+        createDataStream(prefix)
+    }
     return true
 }

@@ -14,7 +14,9 @@ private val logger = KotlinLogging.logger { }
 class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     // you can override all the public properties via the logback xml config
 
+    /** Will log a lot of detail. Useful for debugging when the appender isn't working as expected. */
     var verbose = false
+    /** Leave this off unless you have an issue with elasticsearch that you need to diagnose */
     var logElasticSearchCalls = false
     var host: String = "localhost"
     var port: Int = 9200
@@ -22,14 +24,20 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     var password: String? = null
     var ssl: Boolean = false
 
-    var flushSeconds: Int = 1
+    /** maximum time to wait until flushing messages to Elasticsearch */
+    var flushSeconds: Int = 5
+    /** maximum bulk request page size before flushing. */
     var bulkMaxPageSizw: Int = 200
+    /** attempt to (re) create templates and datas treams. Leave to false if you want to control this manually. */
     var createDataStream: Boolean = false
 
-    // Elasticsearch only feature, leave disabled for opensearch
+    /** Elasticsearch only feature, leave disabled for opensearch and set up the os equivalent manually */
     var configureIlm = false
 
     var dataStreamName = "applogs"
+
+    // ILM settings below
+
     var hotRollOverGb = 2
     var numberOfReplicas = 1
     var numberOfShards = 1
@@ -39,6 +47,9 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     var warmSegments = 1
     var contextVariableFilterRe = ""
 
+    /** comma separated list of mdc fields (without mdc prefix), will be coerced to Long in the json */
+    var coerceMdcFieldsToLong = ""
+    var coerceMdcFieldsToDouble = ""
 
     private val contextVariableFilter: Regex? by lazy {
         contextVariableFilterRe.takeIf { it.isNotBlank() }?.let {
@@ -52,6 +63,8 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     }
     private lateinit var logIndexer: LogIndexer
 
+    private val coerceLongFields by lazy { coerceMdcFieldsToLong.split(',').map { it.trim() }.toSet()}
+    private val coerceDoubleFields by lazy { coerceMdcFieldsToDouble.split(',').map { it.trim() }.toSet()}
     override fun start() {
         log("starting")
         super.start()
@@ -78,7 +91,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
                         deleteMinAge = deleteMinAgeDays.days,
                         warmShrinkShards = warmShrinkShards,
                         warmSegments = warmSegments,
-                        configureIlm = configureIlm
+                        configureIlm = configureIlm,
                     )
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -107,7 +120,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
 
     override fun append(eventObject: ILoggingEvent?) {
         if (eventObject != null) {
-            logIndexer.eventChannel.trySend(eventObject.toLogMessage(contextVariableFilter))
+            logIndexer.eventChannel.trySend(eventObject.toLogMessage(contextVariableFilter, coerceLongFields, coerceDoubleFields))
         }
     }
 

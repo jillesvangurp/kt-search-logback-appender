@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class LogIndexer(
@@ -80,6 +81,11 @@ class LogIndexer(
                         }
                         delay(1.seconds)
                     }
+                } catch (e: CancellationException) {
+                    if(running) {
+                        println("Logback appender flush loop cancelled before running set to false ${e.message}")
+                        e.printStackTrace()
+                    }
                 } catch (e: Exception) {
                     println("Logback appender flush loop exiting abnormally ${e.message}")
                     e.printStackTrace()
@@ -89,11 +95,26 @@ class LogIndexer(
                 try {
                     while (running) {
                         try {
-                            val e = eventChannel.receive()
-                            receiveCount++
-                            session.create(index=index,doc = e)
+                            try {
+                                withTimeout(50.milliseconds) {
+                                    val logMessage = eventChannel.receive()
+                                    receiveCount++
+                                    session.create(index = index, doc = logMessage)
+                                }
+                            } catch(_: TimeoutCancellationException) {
+                                // we want to re-evaluate regularly whether we can exit the loop
+                            }
+//                            val cr = eventChannel.tryReceive()
+//                            if(cr.isClosed) {
+//                                break
+//                            } else {
+//                                cr.getOrNull()?.let { logMessage ->
+//                                    receiveCount++
+//                                    session.create(index = index, doc = logMessage)
+//                                }
+//                            }
                         } catch (e: Exception) {
-                            println("indexing error: ${e.message}")
+                            println("error processing logMessage: ${e.message}")
                             e.printStackTrace()
                         }
                     }
@@ -113,10 +134,19 @@ class LogIndexer(
     fun stop() {
         println("stopping")
         runBlocking {
-            session.flush()
-            session.close()
+            println("stop accepting new messages")
             running = false
-            flushJob.cancel()
+            session.flush()
+            println("flushed remaining messages")
+            session.close()
+            println("closed normally")
+            runCatching {
+                if(flushJob.isActive) {
+                    // should have died by now; but just in case
+                    println("flush job was still active, cancelling")
+                    flushJob.cancel()
+                }
+            }
         }
         indexJob.cancel()
         println("closed es logback appender: received: $receiveCount, indexed:$successCount, failed: $failCount, errors: $errorCount")
