@@ -38,7 +38,7 @@ configure<ComposeExtension> {
     stopContainers.set(true)
     removeContainers.set(true)
     forceRecreate.set(true)
-    useComposeFiles.set(listOf("docker-compose-es-7.yml"))
+    useComposeFiles.set(listOf("docker-compose-es-8.yml"))
 }
 
 dependencies {
