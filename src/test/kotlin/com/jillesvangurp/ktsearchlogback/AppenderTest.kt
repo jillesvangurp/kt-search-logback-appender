@@ -26,6 +26,7 @@ class AppenderTest {
         runBlocking {
             val client = SearchClient(KtorRestClient("localhost",9999))
             runCatching {
+                // delete messages from previous runs
                 client.deleteByQuery("applogs") {
                     query = matchAll()
                 }
@@ -39,7 +40,7 @@ class AppenderTest {
 
             logger.error { "another one" }
             try {
-                error("oopsie")
+                error("oopsie. This is not an error - don't worry, just  testing stack trace logging here")
             } catch (e: Exception) {
                 logger.error(e) { "stacktrace" }
             }
@@ -68,6 +69,8 @@ class AppenderTest {
                     (it.exceptionList?.first()?.stackTrace?.size?:-1) shouldBeGreaterThan 1
                 }
             }
+            // make sure specified mdc fields are correctly coerced
+            // i.e. range queries work as expected
             client.search("applogs") {
                 query = range("mdc.duration_ms") {
                     gt = 100
