@@ -56,7 +56,6 @@ fun IThrowableProxy?.toLogException(): List<LogException>? {
 }
 
 fun ILoggingEvent.toLogMessage(variableFilter: Regex?, coerceLongFields: Set<String>, coerceDoubleFields: Set<String>): LogMessage {
-    this.marker
     return LogMessage(
         message = message,
         logger = loggerName,
