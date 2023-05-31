@@ -29,6 +29,7 @@ suspend fun SearchClient.dataStreamExists(name: String): Boolean {
 suspend fun SearchClient.manageDataStream(
     prefix: String,
     hotRollOverGb:Int,
+    hotMaxAge:String,
     numberOfReplicas: Int,
     numberOfShards: Int,
     warmMinAge: Duration,
@@ -40,6 +41,7 @@ suspend fun SearchClient.manageDataStream(
     if(configureIlm) {
         setIlmPolicy("$prefix-ilm-policy") {
             hot {
+                this["max_age"] = hotMaxAge
                 actions {
                     rollOver(hotRollOverGb)
                 }

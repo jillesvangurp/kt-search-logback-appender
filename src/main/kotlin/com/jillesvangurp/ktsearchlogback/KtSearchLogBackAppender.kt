@@ -38,7 +38,8 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
 
     // ILM settings below
 
-    var hotRollOverGb = 2
+    var hotRollOverGb = 5
+    var hotMaxAge = "1d"
     var numberOfReplicas = 1
     var numberOfShards = 1
     var warmMinAgeDays = 3
@@ -85,6 +86,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
                     client.manageDataStream(
                         prefix = dataStreamName,
                         hotRollOverGb = hotRollOverGb,
+                        hotMaxAge = hotMaxAge,
                         numberOfReplicas = numberOfReplicas,
                         numberOfShards = numberOfShards,
                         warmMinAge = warmMinAgeDays.days,
