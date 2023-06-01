@@ -67,33 +67,50 @@ After adding the dependency, add the appender to your logback configuration.
 This is the list of writable properties and their defaults. TODO document properly but mostly does what it says on the tin. You can override any of these with the appropriate xml tag.
 
 ```kotlin
-    var verbose = false
-    var logElasticSearchCalls = false
-    var host: String = "localhost"
-    var port: Int = 9200
-    var userName: String? = null
-    var password: String? = null
-    var ssl: Boolean = false
+// you can override all the public properties via the logback xml config
 
-    var flushSeconds: Int = 1
-    var bulkMaxPageSizw: Int = 200
-    var createDataStream: Boolean = false
-    // Elasticsearch only feature, leave disabled for opensearch
-    var configureIlm = false
+/** Will log a lot of detail. Useful for debugging when the appender isn't working as expected. */
+var verbose = false
+/** Leave this off unless you have an issue with elasticsearch that you need to diagnose */
+var logElasticSearchCalls = false
+var host: String = "localhost"
+var port: Int = 9200
+var userName: String? = null
+var password: String? = null
+var ssl: Boolean = false
 
-    var dataStreamName = "applogs"
-    var hotRollOverGb = 2
-    var numberOfReplicas = 1
-    var numberOfShards = 1
-    var warmMinAgeDays = 3
-    var deleteMinAgeDays = 30
-    var warmShrinkShards = 1
-    var warmSegments = 1
+/** maximum time to wait until flushing messages to Elasticsearch */
+var flushSeconds: Int = 5
+/** maximum bulk request page size before flushing. */
+var bulkMaxPageSizw: Int = 200
+/** attempt to (re) create templates and datas treams. Leave to false if you want to control this manually. */
+var manageDataStreamAndTemplates: Boolean = false
+
+/** Elasticsearch only feature, leave disabled for opensearch and set up the os equivalent manually */
+var configureIlm = false
+
+var dataStreamName = "applogs"
+
+// ILM settings below
+
+var hotRollOverGb = 5
+var hotMaxAge = "1d"
+var numberOfReplicas = 1
+var numberOfShards = 1
+var warmMinAgeDays = 3
+var deleteMinAgeDays = 30
+var warmShrinkShards = 1
+var warmSegments = 1
+var contextVariableFilterRe = ""
+
+/** comma separated list of mdc fields (without mdc prefix), will be coerced to Long in the json */
+var coerceMdcFieldsToLong = ""
+var coerceMdcFieldsToDouble = ""
 ```
 
 ## Elastic Cloud
 
-When using the appender with elastic cloud and the `createDataStream` setting enabled you can either use a user with full privileges or create a user with at least these privileges:
+When using the appender with elastic cloud and the `manageDataStreamAndTemplates` setting enabled you can either use a user with full privileges or create a user with at least these privileges:
 
 Cluster:
 

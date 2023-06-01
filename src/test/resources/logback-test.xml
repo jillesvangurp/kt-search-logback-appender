@@ -19,12 +19,12 @@
 
     <appender name="es-out" class="com.jillesvangurp.ktsearchlogback.KtSearchLogBackAppender">
         <verbose>true</verbose>
-        <logElasticSearchCalls>true</logElasticSearchCalls>
+        <logElasticSearchCalls>false</logElasticSearchCalls>
         <host>localhost</host>
         <port>9999</port>
         <dataStreamName>applogs</dataStreamName>
         <configureIlm>true</configureIlm>
-        <createDataStream>true</createDataStream>
+        <manageDataStreamAndTemplates>true</manageDataStreamAndTemplates>
         <hotRollOverGb>1</hotRollOverGb>
         <warmMinAgeDays>1</warmMinAgeDays>
         <deleteMinAgeDays>7</deleteMinAgeDays>

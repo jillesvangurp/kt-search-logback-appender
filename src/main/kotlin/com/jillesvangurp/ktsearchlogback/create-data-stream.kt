@@ -41,9 +41,11 @@ suspend fun SearchClient.manageDataStream(
     if(configureIlm) {
         setIlmPolicy("$prefix-ilm-policy") {
             hot {
-                this["max_age"] = hotMaxAge
                 actions {
-                    rollOver(hotRollOverGb)
+                    this["rollover"] = withJsonDsl {
+                        this["max_primary_shard_size"] = "${hotRollOverGb}gb"
+                        this["max_age"] = hotMaxAge
+                    }
                 }
             }
             warm {
@@ -59,6 +61,8 @@ suspend fun SearchClient.manageDataStream(
                     delete()
                 }
             }
+        }.let {
+            log("configured ILM $prefix-ilm-policy: ${it.acknowledged}")
         }
     }
     // using component templates is a good idea
@@ -68,6 +72,12 @@ suspend fun SearchClient.manageDataStream(
             shards = numberOfShards
             put("index.lifecycle.name", "$prefix-ilm-policy")
         }
+        meta {
+            put("created_by","kt-search-logback-appender")
+            put("created_at", Clock.System.now().toString())
+        }
+    }.let {
+        log("configured $prefix-template-settings")
     }
     updateComponentTemplate("$prefix-template-mappings") {
         dynamicTemplate("keywords") {
@@ -78,6 +88,7 @@ suspend fun SearchClient.manageDataStream(
                 ignoreAbove="256"
             }
         }
+
         mappings(false) {
             text("text")
             text(LogMessage::message) {
@@ -113,6 +124,8 @@ suspend fun SearchClient.manageDataStream(
             put("created_by","kt-search-logback-appender")
             put("created_at", Clock.System.now().toString())
         }
+    }.let {
+        log("configured $prefix-template-mappings")
     }
     // now create the template
     createIndexTemplate("$prefix-template") {
@@ -124,10 +137,14 @@ suspend fun SearchClient.manageDataStream(
         // make sure we outrank elastics own stuff
         priority=300
         composedOf = listOf("$prefix-template-settings", "$prefix-template-mappings")
+    }.let {
+        log("configured $prefix-template")
     }
     // create the data stream
     if(!dataStreamExists(prefix)) {
         createDataStream(prefix)
+        log("created data_stream $prefix")
+
     }
     return true
 }

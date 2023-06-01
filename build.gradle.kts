@@ -41,15 +41,22 @@ configure<ComposeExtension> {
     useComposeFiles.set(listOf("docker-compose-es-8.yml"))
 }
 
+configurations.implementation {
+    // exclude these common transitive logging dependencies (slf4j replaces those)
+    exclude(group = "commons-logging", module = "commons-logging")
+}
+
 dependencies {
     api(Kotlin.stdlib.jdk8)
     // use -jvm dependencies here because otherwise kts fails to fetch
     api("com.jillesvangurp:search-client:_")
     api("io.github.microutils:kotlin-logging:_")
     api("ch.qos.logback:logback-classic:_")
+    api(KotlinX.coroutines.slf4j)
 
 
 
+    testImplementation(Ktor.client.logging)
     testImplementation(Testing.junit.jupiter.api)
     testImplementation(Testing.junit.jupiter.engine)
     testImplementation(Testing.kotest.assertions.core)

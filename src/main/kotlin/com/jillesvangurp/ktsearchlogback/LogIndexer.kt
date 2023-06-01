@@ -10,6 +10,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class LogIndexer(
+    private val appender: KtSearchLogBackAppender,
     private val client: SearchClient,
     private val index: String,
     private val bulkMaxPageSize: Int,
@@ -67,7 +68,8 @@ class LogIndexer(
                         val now = Clock.System.now()
                         val check = lastIndexed
                         if (check != null) {
-                            if (now.minus(check).inWholeSeconds > flushSeconds) {
+                            // don't flush before the appender is ready
+                            if (appender.templateInitialized && now.minus(check).inWholeSeconds > flushSeconds) {
                                 try {
                                     session.flush()
                                 } catch (e: Exception) {
@@ -83,12 +85,10 @@ class LogIndexer(
                     }
                 } catch (e: CancellationException) {
                     if(running) {
-                        println("Logback appender flush loop cancelled before running set to false ${e.message}")
-                        e.printStackTrace()
+                        warn(e,"Logback appender flush loop cancelled before running set to false")
                     }
                 } catch (e: Exception) {
-                    println("Logback appender flush loop exiting abnormally ${e.message}")
-                    e.printStackTrace()
+                    warn(e, "Logback appender flush loop exiting abnormally")
                 }
             }
             indexJob = loggingScope.launch {
@@ -101,32 +101,21 @@ class LogIndexer(
                                     receiveCount++
                                     session.create(index = index, doc = logMessage)
                                 }
-                            } catch(_: TimeoutCancellationException) {
+                            } catch(_: CancellationException) {
                                 // we want to re-evaluate regularly whether we can exit the loop
                             }
-//                            val cr = eventChannel.tryReceive()
-//                            if(cr.isClosed) {
-//                                break
-//                            } else {
-//                                cr.getOrNull()?.let { logMessage ->
-//                                    receiveCount++
-//                                    session.create(index = index, doc = logMessage)
-//                                }
-//                            }
                         } catch (e: Exception) {
-                            println("error processing logMessage: ${e.message}")
-                            e.printStackTrace()
+
+                            warn(e,"error processing logMessage")
                         }
                     }
                 } catch (e: Exception) {
-                    println("Logback appender session create loop exiting abnormally ${e.message}")
-                    e.printStackTrace()
+                    warn(e, "Logback appender session create loop exiting abnormally")
                 }
             }
-            println("Started successfully")
+            log("Started successfully")
         } catch (e: Exception) {
-            println("Error initializing kt-search log appender")
-            e.printStackTrace()
+            warn(e,"Error initializing kt-search log appender")
             throw e
         }
     }
