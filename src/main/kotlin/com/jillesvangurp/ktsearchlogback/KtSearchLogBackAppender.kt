@@ -29,7 +29,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     var flushSeconds: Int = 5
 
     /** maximum bulk request page size before flushing. */
-    var bulkMaxPageSizw: Int = 200
+    var bulkMaxPageSize: Int = 200
 
     @Deprecated("renamed", ReplaceWith("manageDataStreamAndTemplates"))
     var createDataStream: Boolean = false
@@ -87,11 +87,14 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
             )
         )
         log("connecting to $host:$port using ssl $ssl with user: $userName and password: ${password?.map { 'x' }}")
-
+        log("""
+            coerceLongFields: $coerceLongFields
+            coerceDoubleFields: $coerceDoubleFields
+        """.trimIndent())
         manageDatastream()
 
-        logIndexer = LogIndexer(this, client, dataStreamName, bulkMaxPageSizw, flushSeconds)
-        println("started log indexer")
+        logIndexer = LogIndexer(this, client, dataStreamName, bulkMaxPageSize, flushSeconds)
+        log("started log indexer")
         // so you can detect application restarts
         Runtime.getRuntime().addShutdownHook(Thread {
             // does not seem to ever get called otherwise
@@ -130,7 +133,6 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
                             false
                         }
                         log("data stream created: $created")
-
                     }
                 } catch (e: Throwable) {
                     e.printStackTrace()

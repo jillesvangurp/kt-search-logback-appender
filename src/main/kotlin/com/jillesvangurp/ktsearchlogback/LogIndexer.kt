@@ -127,8 +127,6 @@ class LogIndexer(
             running = false
             session.flush()
             println("flushed remaining messages")
-            session.close()
-            println("closed normally")
             runCatching {
                 if(flushJob.isActive) {
                     // should have died by now; but just in case
