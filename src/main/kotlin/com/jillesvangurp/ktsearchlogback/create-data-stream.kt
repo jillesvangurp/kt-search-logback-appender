@@ -85,7 +85,7 @@ suspend fun SearchClient.manageDataStream(
             match = "*"
             // this works on the mdc and context fields where set turn dynamic to true
             mapping("keyword") {
-                ignoreAbove="256"
+                this["ignore_above"]="256"
             }
         }
 
