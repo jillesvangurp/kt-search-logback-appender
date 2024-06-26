@@ -4,7 +4,8 @@ import com.jillesvangurp.ktsearch.*
 import com.jillesvangurp.searchdsls.querydsl.matchAll
 import com.jillesvangurp.searchdsls.querydsl.range
 import com.jillesvangurp.searchdsls.querydsl.term
-import io.kotest.assertions.timing.eventually
+import com.jillesvangurp.serializationext.DEFAULT_JSON
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.collections.contain
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.ints.shouldBeGreaterThan

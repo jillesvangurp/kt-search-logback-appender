@@ -1,5 +1,6 @@
 import com.avast.gradle.dockercompose.ComposeExtension
-import java.net.URL
+import java.net.URI
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 buildscript {
     repositories {
@@ -13,12 +14,6 @@ repositories {
             includeGroup("com.jillesvangurp")
         }
     }
-//    maven("https://jitpack.io") {
-//        content {
-//            includeGroup("com.github.jillesvangurp")
-//            includeGroup("com.github.jillesvangurp.ktsearch")
-//        }
-//    }
 }
 
 plugins {
@@ -29,8 +24,10 @@ plugins {
     id("com.avast.gradle.docker-compose")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "21"
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_11
+    }
 }
 
 configure<ComposeExtension> {
@@ -50,11 +47,10 @@ dependencies {
     api(Kotlin.stdlib.jdk8)
     // use -jvm dependencies here because otherwise kts fails to fetch
     api("com.jillesvangurp:search-client:_")
+    implementation("com.jillesvangurp:kotlinx-serialization-extensions:_")
     api("io.github.microutils:kotlin-logging:_")
     api("ch.qos.logback:logback-classic:_")
     api(KotlinX.coroutines.slf4j)
-
-
 
     testImplementation(Ktor.client.logging)
     testImplementation(Testing.junit.jupiter.api)
@@ -70,7 +66,7 @@ dependencies {
 
 tasks.withType<Test> {
     val isUp = try {
-        URL("http://localhost:9999").openConnection().connect()
+        URI("http://localhost:9999").toURL().openConnection().connect()
         true
     } catch (e: Exception) {
         false
