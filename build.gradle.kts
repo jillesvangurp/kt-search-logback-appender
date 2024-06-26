@@ -24,12 +24,6 @@ plugins {
     id("com.avast.gradle.docker-compose")
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_11
-    }
-}
-
 configure<ComposeExtension> {
     buildAdditionalArgs.set(listOf("--force-rm"))
     stopContainers.set(true)
