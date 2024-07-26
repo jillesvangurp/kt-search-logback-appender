@@ -1,6 +1,5 @@
 import com.avast.gradle.dockercompose.ComposeExtension
 import java.net.URI
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 buildscript {
     repositories {
@@ -30,6 +29,15 @@ configure<ComposeExtension> {
     removeContainers.set(true)
     forceRecreate.set(true)
     useComposeFiles.set(listOf("docker-compose-es-8.yml"))
+    listOf("/usr/bin/docker","/usr/local/bin/docker").firstOrNull {
+        File(it).exists()
+    }?.let { docker ->
+        // works around an issue where the docker
+        // command is not found
+        // falls back to the default, which may work on
+        // some platforms
+        dockerExecutable.set(docker)
+    }
 }
 
 configurations.implementation {
