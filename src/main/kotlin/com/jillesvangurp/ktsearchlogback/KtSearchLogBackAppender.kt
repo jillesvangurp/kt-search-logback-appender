@@ -4,10 +4,26 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import com.jillesvangurp.ktsearch.KtorRestClient
 import com.jillesvangurp.ktsearch.SearchClient
-import kotlinx.coroutines.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.java.Java
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BasicAuthCredentials
+import io.ktor.client.plugins.auth.providers.basic
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import java.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 
 @Suppress("MemberVisibilityCanBePrivate", "unused") // we need public properties
@@ -74,33 +90,47 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
 
     private val coerceLongFields by lazy { coerceMdcFieldsToLong.split(',').map { it.trim() }.toSet() }
     private val coerceDoubleFields by lazy { coerceMdcFieldsToDouble.split(',').map { it.trim() }.toSet() }
-    override fun start() {
-        println("starting logging-es-calls: $logElasticSearchCalls")
-        client = SearchClient(
-            KtorRestClient(
-                host = host,
-                port = port,
-                user = userName,
-                password = password,
-                https = ssl,
-                logging = logElasticSearchCalls
-            )
-        )
-        log("connecting to $host:$port using ssl $ssl with user: $userName and password: ${password?.map { 'x' }}")
-        log("""
-            coerceLongFields: $coerceLongFields
-            coerceDoubleFields: $coerceDoubleFields
-        """.trimIndent())
-        manageDatastream()
 
-        logIndexer = LogIndexer(this, client, dataStreamName, bulkMaxPageSize, flushSeconds)
-        log("started log indexer")
-        // so you can detect application restarts
-        Runtime.getRuntime().addShutdownHook(Thread {
-            // does not seem to ever get called otherwise
-            logIndexer.stop()
-        })
+    override fun start() {
+        val appender = this
+
         super.start()
+        // initialize client from a co-routine after logging has had a chance to init
+        // because ktor-client calls logging related APIs during it's initialization
+        // this way the appender start exits before any ktor-client stuff is called
+        CoroutineScope(CoroutineName("startup-init")).launch {
+            try {
+                println("starting logging-es-calls: $logElasticSearchCalls")
+
+                client = SearchClient(
+                    KtorRestClient(
+                        host = host,
+                        port = port,
+                        user = userName,
+                        password = password,
+                        https = ssl,
+                        logging = logElasticSearchCalls,
+                    )
+                )
+                log("connecting to $host:$port using ssl $ssl with user: $userName and password: ${password?.map { 'x' }}")
+                log("""
+                    coerceLongFields: $coerceLongFields
+                    coerceDoubleFields: $coerceDoubleFields
+                """.trimIndent())
+                manageDatastream()
+
+                logIndexer = LogIndexer(appender, client, dataStreamName, bulkMaxPageSize, flushSeconds)
+                log("started log indexer")
+                // so you can detect application restarts
+                Runtime.getRuntime().addShutdownHook(Thread {
+                    // does not seem to ever get called otherwise
+                    logIndexer.stop()
+                })
+            } catch (e: Exception) {
+                println("ERROR starting log appender: ${e.message}")
+                e.printStackTrace()
+            }
+        }
     }
 
     private fun manageDatastream() {

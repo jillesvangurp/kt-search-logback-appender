@@ -49,15 +49,24 @@ dependencies {
     api(Kotlin.stdlib.jdk8)
     // use -jvm dependencies here because otherwise kts fails to fetch
     api("com.jillesvangurp:search-client:_")
-    implementation("com.jillesvangurp:kotlinx-serialization-extensions:_")
-    api("io.github.microutils:kotlin-logging:_")
+    api("com.jillesvangurp:kotlinx-serialization-extensions:_")
     api("ch.qos.logback:logback-classic:_")
     api(KotlinX.coroutines.slf4j)
+    api("io.github.oshai:kotlin-logging:_")
 
-    testImplementation(Ktor.client.logging)
+    api(Ktor.client.logging)
+    api(Ktor.client.cio)
+    api(Ktor.client.java)
+    api(Ktor.client.logging)
+
+    api(Ktor.client.core)
+    api(Ktor.client.auth)
+    api(Ktor.client.serialization)
+
     testImplementation(Testing.junit.jupiter.api)
     testImplementation(Testing.junit.jupiter.engine)
     testImplementation(Testing.kotest.assertions.core)
+
     // bring your own logging, but we need some in tests
     testImplementation("org.slf4j:slf4j-api:_")
     testImplementation("org.slf4j:jcl-over-slf4j:_")

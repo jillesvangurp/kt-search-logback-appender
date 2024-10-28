@@ -1,8 +1,10 @@
 package com.jillesvangurp.ktsearchlogback
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
+
 
 private val logger = KotlinLogging.logger("kt-search_logback-appender")
+
 internal fun log(message: String) {
     logger.info { message }
     println("INFO kt-search_logback-appender: $message")

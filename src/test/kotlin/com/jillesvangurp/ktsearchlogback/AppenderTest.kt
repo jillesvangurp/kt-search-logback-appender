@@ -1,10 +1,17 @@
 package com.jillesvangurp.ktsearchlogback
 
-import com.jillesvangurp.ktsearch.*
+import com.jillesvangurp.ktsearch.KtorRestClient
+import com.jillesvangurp.ktsearch.SearchClient
+import com.jillesvangurp.ktsearch.deleteByQuery
+import com.jillesvangurp.ktsearch.getIndexMappings
+import com.jillesvangurp.ktsearch.parseHits
+import com.jillesvangurp.ktsearch.search
+import com.jillesvangurp.ktsearch.total
 import com.jillesvangurp.searchdsls.querydsl.matchAll
 import com.jillesvangurp.searchdsls.querydsl.range
 import com.jillesvangurp.searchdsls.querydsl.term
 import com.jillesvangurp.serializationext.DEFAULT_JSON
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.matchers.collections.contain
 import io.kotest.matchers.collections.shouldContain
@@ -12,12 +19,13 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import org.junit.jupiter.api.RepeatedTest
 import org.slf4j.MDC
-import kotlin.time.Duration.Companion.seconds
 
 val logger = KotlinLogging.logger {}
 
@@ -25,7 +33,12 @@ class AppenderTest {
     @RepeatedTest(2) // run it twice so we test restart and fresh start
     fun shouldLogSomeStuff() {
         runBlocking {
-            val client = SearchClient(KtorRestClient("localhost",9999))
+            val client = SearchClient(
+                KtorRestClient(
+                    host = "localhost",
+                    port = 9999,
+                )
+            )
             runCatching {
                 // delete messages from previous runs
                 client.deleteByQuery("applogs") {
