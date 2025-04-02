@@ -8,9 +8,10 @@ Features
 
 - You can let it create a datastream for you; or if you prefer you can manage your own mapping templates
 - Can be easily configured to work with elastic cloud
-- You can also use Opensearch but in that case you need to turn ilm off. You may want to explore the Opensearch state management for this which implements similar functionality.
+- You can also use Opensearch but in that case you may need to turn ilm off. You may want to explore the Opensearch state management for this which implements similar functionality.
+- Supports various ways to provide MDC and other context to along with the log messages. This makes it easy to creat dashboards in e.g. Kibana and break things down by server, data center, instance type, and other meta data.
 
-Note. still a work in progress and not ready for general usage yet. 
+We've been using this appender for several years at [FORMATION](https://tryformation.com). We have a cheap Elastic Cloud logging cluster and our API server (Spring Boot) uses this plugin to send logging events there.
 
 ## Gradle
 
@@ -31,7 +32,7 @@ And then the dependency:
 
 ```kotlin
     // check the latest release tag for the current version
-    implementation("com.jillesvangurp:kt-search-logback-appender:0.1.4")
+    implementation("com.jillesvangurp:kt-search-logback-appender:x.y.z")
 ```
 
 ## Usage
@@ -64,7 +65,9 @@ After adding the dependency, add the appender to your logback configuration.
 
 ## Settings
 
-This is the list of writable properties and their defaults. TODO document properly but mostly does what it says on the tin. You can override any of these with the appropriate xml tag.
+The plugin can be configured via the normal mechanisms provided by Logback.
+
+This is the list of writable properties and their defaults. Mostly, the properties are pretty self explanatory. You can override any of these with the appropriate xml tag in your logback configuration.
 
 ```kotlin
 // you can override all the public properties via the logback xml config
@@ -108,7 +111,7 @@ var coerceMdcFieldsToLong = ""
 var coerceMdcFieldsToDouble = ""
 ```
 
-## Elastic Cloud
+## Elastic Cloud Privileges Needed
 
 When using the appender with elastic cloud and the `manageDataStreamAndTemplates` setting enabled you can either use a user with full privileges or create a user with at least these privileges:
 
