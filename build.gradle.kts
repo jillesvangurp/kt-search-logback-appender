@@ -63,6 +63,7 @@ dependencies {
     api(Ktor.client.auth)
     api(Ktor.client.serialization)
 
+    testImplementation(kotlin("test"))
     testImplementation(Testing.junit.jupiter.api)
     testImplementation(Testing.junit.jupiter.engine)
     testImplementation(Testing.kotest.assertions.core)
