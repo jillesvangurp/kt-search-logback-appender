@@ -15,6 +15,16 @@ repositories {
     }
 }
 
+kotlin {
+    compilerOptions {
+        optIn.addAll(
+            "kotlin.RequiresOptIn",
+            "kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "kotlin.time.ExperimentalTime"
+        )
+    }
+}
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.dokka")

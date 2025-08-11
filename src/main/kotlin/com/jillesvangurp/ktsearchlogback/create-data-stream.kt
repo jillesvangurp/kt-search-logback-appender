@@ -2,7 +2,7 @@ package com.jillesvangurp.ktsearchlogback
 
 import com.jillesvangurp.jsondsl.withJsonDsl
 import com.jillesvangurp.ktsearch.*
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.time.Duration
 
 suspend fun SearchClient.dataStreamExists(name: String): Boolean {
