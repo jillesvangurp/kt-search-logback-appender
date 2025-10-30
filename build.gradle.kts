@@ -28,6 +28,7 @@ kotlin {
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.dokka")
+    id("org.jetbrains.dokka-javadoc")
     id("maven-publish")
     kotlin("plugin.serialization")
     id("com.avast.gradle.docker-compose")
@@ -39,7 +40,7 @@ configure<ComposeExtension> {
     removeContainers.set(true)
     forceRecreate.set(true)
     useComposeFiles.set(listOf("docker-compose-es-8.yml"))
-    listOf("/usr/bin/docker","/usr/local/bin/docker","/opt/homebrew/bin/docker").firstOrNull {
+    listOf("/usr/bin/docker", "/usr/local/bin/docker", "/opt/homebrew/bin/docker").firstOrNull {
         File(it).exists()
     }?.let { docker ->
         // works around an issue where the docker
@@ -115,21 +116,24 @@ tasks.withType<Test> {
 val artifactName = rootProject.name
 val artifactGroup = "com.jillesvangurp"
 
-val sourceJar = task("sourceJar", Jar::class) {
-    dependsOn(tasks["classes"])
+val sourceJar by tasks.registering(Jar::class) {
+    dependsOn(tasks.named("classes"))
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
 }
 
-val javadocJar = task("javadocJar", Jar::class) {
-    from(tasks["dokkaJavadoc"])
+val dokkaPublicationJavadoc = tasks.named("dokkaGeneratePublicationJavadoc")
+
+val javadocJar by tasks.registering(Jar::class) {
+    dependsOn(dokkaPublicationJavadoc)
     archiveClassifier.set("javadoc")
+    from(dokkaPublicationJavadoc.map { task: Task -> task.outputs.files })
 }
 
 
 tasks.register("versionCheck") {
     doLast {
-        if(rootProject.version == "unspecified") {
+        if (rootProject.version == "unspecified") {
             error("call with -Pversion=x.y.z to set a version and make sure it lines up with the current tag")
         }
     }
