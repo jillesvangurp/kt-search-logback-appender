@@ -39,7 +39,7 @@ configure<ComposeExtension> {
     removeContainers.set(true)
     forceRecreate.set(true)
     useComposeFiles.set(listOf("docker-compose-es-8.yml"))
-    listOf("/usr/bin/docker","/usr/local/bin/docker").firstOrNull {
+    listOf("/usr/bin/docker","/usr/local/bin/docker","/opt/homebrew/bin/docker").firstOrNull {
         File(it).exists()
     }?.let { docker ->
         // works around an issue where the docker
