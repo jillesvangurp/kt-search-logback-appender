@@ -6,9 +6,8 @@ The appender uses the provided `LogMessage` as a model class. This is an opinion
 
 Features
 
-- You can let it create a datastream for you; or if you prefer you can manage your own mapping templates
 - Can be easily configured to work with elastic cloud
-- You can also use Opensearch but in that case you may need to turn ilm off. You may want to explore the Opensearch state management for this which implements similar functionality.
+- You can also use Opensearch; create and manage templates/policies outside the appender (for example with `create-ds-and-template.sh`).
 - Supports various ways to provide MDC and other context to along with the log messages. This makes it easy to creat dashboards in e.g. Kibana and break things down by server, data center, instance type, and other meta data.
 
 We've been using this appender for several years at [FORMATION](https://tryformation.com). We have a cheap Elastic Cloud logging cluster and our API server (Spring Boot) uses this plugin to send logging events there.
@@ -86,24 +85,8 @@ var ssl: Boolean = false
 var flushSeconds: Int = 5
 /** maximum bulk request page size before flushing. */
 var bulkMaxPageSizw: Int = 200
-/** attempt to (re) create templates and datas treams. Leave to false if you want to control this manually. */
-var manageDataStreamAndTemplates: Boolean = false
-
-/** Elasticsearch only feature, leave disabled for opensearch and set up the os equivalent manually */
-var configureIlm = false
 
 var dataStreamName = "applogs"
-
-// ILM settings below
-
-var hotRollOverGb = 5
-var hotMaxAge = "1d"
-var numberOfReplicas = 1
-var numberOfShards = 1
-var warmMinAgeDays = 3
-var deleteMinAgeDays = 30
-var warmShrinkShards = 1
-var warmSegments = 1
 var contextVariableFilterRe = ""
 
 /** comma separated list of mdc fields (without mdc prefix), will be coerced to Long in the json */
@@ -113,14 +96,12 @@ var coerceMdcFieldsToDouble = ""
 
 ## Elastic Cloud Privileges Needed
 
-When using the appender with elastic cloud and the `manageDataStreamAndTemplates` setting enabled you can either use a user with full privileges or create a user with at least these privileges:
+The appender only writes documents. If you create templates/policies/data streams outside the appender, grant those management permissions to that provisioning user or script.
+
+For the runtime appender user, grant at least:
 
 Cluster:
-
-- manage_index_templates
-- manage_pipeline
 - monitor
-- manage_ilm
 
 Index:
 
@@ -132,4 +113,3 @@ Grant these permissions on the `applogs*` prefix
 - create_index
 - write
 - view_index_metadata
-

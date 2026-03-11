@@ -4,26 +4,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import com.jillesvangurp.ktsearch.KtorRestClient
 import com.jillesvangurp.ktsearch.SearchClient
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.engine.java.Java
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BasicAuthCredentials
-import io.ktor.client.plugins.auth.providers.basic
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
-import java.time.Duration
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 
 
 @Suppress("MemberVisibilityCanBePrivate", "unused") // we need public properties
@@ -47,27 +30,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     /** maximum bulk request page size before flushing. */
     var bulkMaxPageSize: Int = 200
 
-    @Deprecated("renamed", ReplaceWith("manageDataStreamAndTemplates"))
-    var createDataStream: Boolean = false
-
-    /** attempt to (re) create templates and data streams. Leave to false if you want to control this manually. */
-    var manageDataStreamAndTemplates: Boolean = false
-
-    /** Elasticsearch only feature, leave disabled for opensearch and set up the os equivalent manually */
-    var configureIlm = false
-
     var dataStreamName = "applogs"
-
-    // ILM settings below
-
-    var hotRollOverGb = 5
-    var hotMaxAge = "1d"
-    var numberOfReplicas = 1
-    var numberOfShards = 1
-    var warmMinAgeDays = 3
-    var deleteMinAgeDays = 30
-    var warmShrinkShards = 1
-    var warmSegments = 1
     var contextVariableFilterRe = ""
 
     /** comma separated list of mdc fields (without mdc prefix), will be coerced to Long in the json */
@@ -86,14 +49,11 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
     }
     private lateinit var logIndexer: LogIndexer
     private lateinit var client: SearchClient
-    internal var templateInitialized: Boolean = false
 
     private val coerceLongFields by lazy { coerceMdcFieldsToLong.split(',').map { it.trim() }.toSet() }
     private val coerceDoubleFields by lazy { coerceMdcFieldsToDouble.split(',').map { it.trim() }.toSet() }
 
     override fun start() {
-        val appender = this
-
         super.start()
         // initialize client from a co-routine after logging has had a chance to init
         // because ktor-client calls logging related APIs during it's initialization
@@ -117,9 +77,7 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
                     coerceLongFields: $coerceLongFields
                     coerceDoubleFields: $coerceDoubleFields
                 """.trimIndent())
-                manageDatastream()
-
-                logIndexer = LogIndexer(appender, client, dataStreamName, bulkMaxPageSize, flushSeconds)
+                logIndexer = LogIndexer(client, dataStreamName, bulkMaxPageSize, flushSeconds)
                 log("started log indexer")
                 // so you can detect application restarts
                 Runtime.getRuntime().addShutdownHook(Thread {
@@ -129,46 +87,6 @@ class KtSearchLogBackAppender : AppenderBase<ILoggingEvent>() {
             } catch (e: Exception) {
                 println("ERROR starting log appender: ${e.message}")
                 e.printStackTrace()
-            }
-        }
-    }
-
-    private fun manageDatastream() {
-        runBlocking {
-            CoroutineScope(CoroutineName("manage templates") + Dispatchers.IO).launch() {
-                try {
-                    // make sure logging has properly initialized
-                    withTimeout(10.seconds) {
-                        while (!isStarted) {
-                            delay(10.milliseconds)
-                        }
-                    }
-                    if (manageDataStreamAndTemplates) {
-                        val created = try {
-                            client.manageDataStream(
-                                prefix = dataStreamName,
-                                hotRollOverGb = hotRollOverGb,
-                                hotMaxAge = hotMaxAge,
-                                numberOfReplicas = numberOfReplicas,
-                                numberOfShards = numberOfShards,
-                                warmMinAge = warmMinAgeDays.days,
-                                deleteMinAge = deleteMinAgeDays.days,
-                                warmShrinkShards = warmShrinkShards,
-                                warmSegments = warmSegments,
-                                configureIlm = configureIlm,
-                            )
-                        } catch (e: Exception) {
-                            warn(e, "manage data stream failed with exception")
-                            e.printStackTrace()
-                            false
-                        }
-                        log("data stream created: $created")
-                    }
-                } catch (e: Throwable) {
-                    e.printStackTrace()
-                }
-                // LogIndexer.flush waits until this is true; this way no messages are indexed before we have ilm and templates
-                templateInitialized = true
             }
         }
     }

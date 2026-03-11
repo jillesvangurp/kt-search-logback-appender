@@ -21,6 +21,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -40,6 +41,19 @@ class AppenderTest {
                 )
             )
             runCatching {
+                client.manageDataStream(
+                    prefix = "applogs",
+                    hotRollOverGb = 1,
+                    hotMaxAge = "1d",
+                    numberOfReplicas = 0,
+                    numberOfShards = 1,
+                    warmMinAge = 1.days,
+                    deleteMinAge = 7.days,
+                    warmShrinkShards = 1,
+                    warmSegments = 1,
+                    configureIlm = true,
+                )
+
                 // delete messages from previous runs
                 client.deleteByQuery("applogs") {
                     query = matchAll()
@@ -66,7 +80,7 @@ class AppenderTest {
             delay(1.seconds)
 
             eventually(20.seconds) {
-                // should not throw because the data stream was created
+                // should not throw because templates and the data stream were pre-created
                 client.getIndexMappings("applogs")
                 // if our mapping is applied, we should be able to query on context.environment
                 val resp = client.search("applogs") {

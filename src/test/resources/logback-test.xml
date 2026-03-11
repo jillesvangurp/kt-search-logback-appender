@@ -23,11 +23,6 @@
         <host>localhost</host>
         <port>9999</port>
         <dataStreamName>applogs</dataStreamName>
-        <configureIlm>true</configureIlm>
-        <manageDataStreamAndTemplates>true</manageDataStreamAndTemplates>
-        <hotRollOverGb>1</hotRollOverGb>
-        <warmMinAgeDays>1</warmMinAgeDays>
-        <deleteMinAgeDays>7</deleteMinAgeDays>
         <contextVariableFilterRe>(environment|host)</contextVariableFilterRe>
         <coerceMdcFieldsToLong>duration_ms,amount_processed</coerceMdcFieldsToLong>
         <coerceMdcFieldsToDouble>improbability_level</coerceMdcFieldsToDouble>

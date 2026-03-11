@@ -10,7 +10,6 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class LogIndexer(
-    private val appender: KtSearchLogBackAppender,
     private val client: SearchClient,
     private val index: String,
     private val bulkMaxPageSize: Int,
@@ -68,8 +67,7 @@ class LogIndexer(
                         val now = Clock.System.now()
                         val check = lastIndexed
                         if (check != null) {
-                            // don't flush before the appender is ready
-                            if (appender.templateInitialized && now.minus(check).inWholeSeconds > flushSeconds) {
+                            if (now.minus(check).inWholeSeconds > flushSeconds) {
                                 try {
                                     session.flush()
                                 } catch (e: Exception) {
