@@ -36,7 +36,17 @@ And then the dependency:
 
 ## Usage
 
-After adding the dependency, add the appender to your logback configuration.
+Before using the appender, create the data stream and templates once. The appender writes documents but does not provision Elasticsearch resources for you at runtime.
+
+The helper script creates the data stream, component templates, index template, mappings, and optionally the ILM policy:
+
+```bash
+./create-ds-and-template.sh --es-url http://localhost:9200 --data-stream-name applogs
+```
+
+The verification step in the script uses `jq`, so make sure `curl` and `jq` are installed.
+
+After provisioning, add the appender to your Logback configuration.
 
 ```xml
 <?xml version="1.0"?>
@@ -51,15 +61,40 @@ After adding the dependency, add the appender to your logback configuration.
         <resetJUL>true</resetJUL>
     </contextListener>
 
-    <appender name="es-out" class="com.jillesvangurp.ktsearchlogback.KtSearchLogBackAppender">
-        <port>9999</port>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d %-5level %logger - %msg%n</pattern>
+        </encoder>
     </appender>
-    
+
+    <appender name="ASYNC-STDOUT" class="ch.qos.logback.classic.AsyncAppender" queueSize="2048">
+        <appender-ref ref="STDOUT"/>
+    </appender>
+
+    <appender name="es-out" class="com.jillesvangurp.ktsearchlogback.KtSearchLogBackAppender">
+        <host>localhost</host>
+        <port>9999</port>
+        <dataStreamName>applogs</dataStreamName>
+    </appender>
+
     <root level="INFO">
         <appender-ref ref="ASYNC-STDOUT"/>
         <appender-ref ref="es-out"/>
     </root>
 </configuration>
+```
+
+For a remote or Elastic Cloud cluster, configure the connection explicitly:
+
+```xml
+<appender name="es-out" class="com.jillesvangurp.ktsearchlogback.KtSearchLogBackAppender">
+    <host>your-deployment.es.region.provider.cloud.es.io</host>
+    <port>443</port>
+    <ssl>true</ssl>
+    <userName>elastic</userName>
+    <password>${ELASTIC_PASSWORD}</password>
+    <dataStreamName>applogs</dataStreamName>
+</appender>
 ```
 
 ## Settings
@@ -84,7 +119,7 @@ var ssl: Boolean = false
 /** maximum time to wait until flushing messages to Elasticsearch */
 var flushSeconds: Int = 5
 /** maximum bulk request page size before flushing. */
-var bulkMaxPageSizw: Int = 200
+var bulkMaxPageSize: Int = 200
 
 var dataStreamName = "applogs"
 var contextVariableFilterRe = ""
@@ -93,6 +128,23 @@ var contextVariableFilterRe = ""
 var coerceMdcFieldsToLong = ""
 var coerceMdcFieldsToDouble = ""
 ```
+
+## Indexed Fields
+
+The default index template created by the helper script maps these fields:
+
+- `@timestamp`
+- `message`
+- `thread`
+- `level`
+- `logger`
+- `contextName`
+- `mdc.*`
+- `context.*`
+- `exceptionList.className`
+- `exceptionList.message`
+
+String fields inside `mdc` and `context` are mapped dynamically as keywords so they can be used directly in filters and aggregations.
 
 ## Elastic Cloud Privileges Needed
 
