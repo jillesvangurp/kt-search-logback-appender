@@ -116,7 +116,7 @@ tasks.withType<Test> {
 val artifactName = rootProject.name
 val artifactGroup = "com.jillesvangurp"
 
-val sourceJar by tasks.registering(Jar::class) {
+val sourceJar = tasks.register<Jar>("sourceJar") {
     dependsOn(tasks.named("classes"))
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
@@ -124,7 +124,7 @@ val sourceJar by tasks.registering(Jar::class) {
 
 val dokkaPublicationJavadoc = tasks.named("dokkaGeneratePublicationJavadoc")
 
-val javadocJar by tasks.registering(Jar::class) {
+val javadocJar = tasks.register<Jar>("javadocJar") {
     dependsOn(dokkaPublicationJavadoc)
     archiveClassifier.set("javadoc")
     from(dokkaPublicationJavadoc.map { task: Task -> task.outputs.files })
