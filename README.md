@@ -1,3 +1,23 @@
+# Deprecated: use the KT Search Logback module
+
+This standalone project is deprecated in favor of
+[`kt-search-lib-logback`](https://github.com/jillesvangurp/kt-search/tree/master/kt-search-lib-logback)
+in KT Search. The module is built and released with KT Search and uses the
+same version, keeping the appender and client APIs aligned.
+
+Replace `com.jillesvangurp:kt-search-logback-appender` with
+`com.jillesvangurp:kt-search-lib-logback` using the same release version as
+your other KT Search modules. Remove the old artifact, including transitive
+copies, to avoid duplicate classes. Package names and Logback XML settings
+are unchanged. The new module requires Java 17 or newer.
+
+See the [module documentation](https://github.com/jillesvangurp/kt-search/tree/master/kt-search-lib-logback)
+for setup, configuration, and the provisioning script. The new coordinates
+will be available starting with the first KT Search release containing the
+module. The instructions below describe the legacy standalone releases.
+
+---
+
 [![Run tests](https://github.com/jillesvangurp/kt-search-logback-appender/actions/workflows/ci.yml/badge.svg)](https://github.com/jillesvangurp/kt-search-logback-appender/actions/workflows/ci.yml)
 
 Log appender for Logback that bulk indexes to Elasticsearch using kt-search as the client.
